@@ -2,7 +2,8 @@ import React, { useRef, useState } from 'react'
 import "./MainStyle.scss"
 // const fs = require('fs');
 const extractFrames = require('gif-extract-frames')
- 
+var gifFrames = require('gif-frames');
+var fs = require('fs');
 
 
 const Main = () => {
@@ -104,7 +105,6 @@ const Main = () => {
 
 
 
-
     const handleChange = async e => {
        
             const file = e.target.files[0];
@@ -138,35 +138,76 @@ const Main = () => {
             reader.readAsDataURL(file);
             // console.log(imgRef.current.src)
 
-            const results = await extractFrames({
-                input: imgRef.current.src,
-                // output: 'frame-%d.png'
-              })
-            const arr = Array.from(results.data)
-            const grayscales = getGrayScales(arr)
-            const dataPerFrame = grayscales.slice().length
-            const frameData = new Array(results.shape[0])
-            // console.log(grayscales.length)
-            // console.log(dataPerFrame)
-            const frameDataArray = frameData.fill().map(_ => grayscales.splice(0, dataPerFrame/results.shape[0]))
+            // const results = await extractFrames({
+            //     input: URL.createObjectURL(file),
+            //     // output: 'frame-%d.png'
+            //   })
             
-            const frameASCII = frameDataArray.map( (data) => {
-                return data.map((grayScale, index) => {
-                    let nextChars = getCharacterForGrayScale(grayScale);
-                    // console.log(nextChars, index)
-                    // if ((index + 1) % imgRef.current.width === 0) {
-                    //     nextChars += '\n';
-                    // }
+            // const arr = Array.from(results.data)
+            // const grayscales = getGrayScales(arr)
+            // const gitDataLength = grayscales.slice().length
+            // const frames = results.shape[2]
+            // console.log(frames, gitDataLength)
+            // const frameData = new Array(frames)
+            // // // console.log(grayscales.length)
+            // // // console.log(dataPerFrame)
+            // const frameDataArray = frameData.fill().map(_ => grayscales.splice(0, gitDataLength/frames))
+            // console.log(frameDataArray)
             
-                    return ((index + 1) % imgRef.current.width === 0) ? nextChars + '\n' : nextChars;
-                }).join('')
+            // const frameASCII = frameDataArray.map( (data) => {
+
+            //     return data.map((grayScale, index) => {
+            //         let nextChars = getCharacterForGrayScale(grayScale);
+            //         // console.log(nextChars, index)
+            //         // if ((index + 1) % imgRef.current.width === 0) {
+            //         //     nextChars += '\n';
+            //         // }
+            
+            //         return ((index + 1) % imgRef.current.width === 0) ? nextChars + '\n' : nextChars;
+            //     }).join('')
                 // }, '')
-            // console.log(data)
+            
 
-            } ).join('')
-            console.log(frameASCII)
-            setFrames(frameASCII)
+            // } )
+            const gifFrameData = []
+            gifFrames({ url: (URL.createObjectURL(file)), frames: '0-99', outputType: 'canvas' })
+                    .then(function (frameData) {
+                    let gifWidth
+                    const gifFrameData = frameData.map( frame => {
+                        //    setInterval(() => {
+                            frameRef.current.appendChild(frame.getImage())
+                            const gifData = Array.from(frame.getImage().getContext('2d').getImageData(0, 0, frame.getImage().width, frame.getImage().height).data)
+                            gifWidth = frame.getImage().width
+                            // const frameASCII = gifData.map( (data) => {
+                            //     console.log(data)
+                            //     // return data.map((grayScale, index) => {
+                            //     //     let nextChars = getCharacterForGrayScale(grayScale);
+                            //     //     return ((index + 1) % imgRef.current.width === 0) ? nextChars + '\n' : nextChars;
+                            //     // }).join('')
+                            //     // }, '')
+                            
+                
+                            // } )
+                            // setFrames(frameASCII)
+                            // gifFrameData.push(gifData)
+                        //    }, 10000)
+                        return gifData
+                        }  );
+                        // const gray = getGrayScales(gifFrameData) 
+                        const asciiGIF = gifFrameData.map( (data) => {
+                                // console.log(data)
+                                const gray = getGrayScales(data) 
+                                return gray.map((grayScale, index) => {
+                                    let nextChars = getCharacterForGrayScale(grayScale);
+                                    return ((index + 1) % gifWidth === 0) ? nextChars + '\n' : nextChars;
+                                }).join('')
+                                // }, '')
+                        })
+                        console.log(asciiGIF)
+                        // setFrames(asciiGIF)
+                    }).catch(console.error.bind(console));
 
+            
 
     }
 
@@ -177,12 +218,12 @@ const Main = () => {
             <input type="file"  accept="image/gif" name="image" id="file" onChange={ handleChange }  />
             <div className="img-wrapper" >
                 <img id="output" ref={imgRef}  />
-                <canvas ref={canvasRef} />
+                <canvas ref={canvasRef} id="gray" />
                 <pre ref={preRef}></pre>
             </div>
             <div id='frames' ref={frameRef} ></div>
             
-            {frames && <pre> {frames} </pre>}
+            {frames && frames.map( (frame, index) =>  <pre key={index} > {frame} </pre>  )}
             
             {/* <button onClick={handleClick} > Click </button> */}
         </div>
