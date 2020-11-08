@@ -1,7 +1,5 @@
-import React, { useRef, useState } from 'react'
+import React, { useRef, useState, useEffect } from 'react'
 import "./MainStyle.scss"
-// const fs = require('fs');
-const extractFrames = require('gif-extract-frames')
 var gifFrames = require('gif-frames');
 var fs = require('fs');
 
@@ -21,27 +19,13 @@ const Main = () => {
     const MAXIMUM_HEIGHT = 80;
 
     const getCharacterForGrayScale = grayScale => grayRamp[Math.ceil((rampLength - 1) * grayScale / 255)];
+    let framecount = 0
+    useEffect(() => {
+        
+        console.log(framecount)
+        framecount+=1
+    }, [frames])
 
-    const convertToGrayScales = (context, width, height) => {
-        const imageData = context.getImageData(0, 0, width, height);
-    
-        const grayScales = [];
-    
-        for (let i = 0 ; i < imageData.data.length ; i += 4) {
-            const r = imageData.data[i];
-            const g = imageData.data[i + 1];
-            const b = imageData.data[i + 2];
-    
-            const grayScale = toGrayScale(r, g, b);
-            imageData.data[i] = imageData.data[i + 1] = imageData.data[i + 2] = grayScale;
-    
-            grayScales.push(grayScale);
-        }
-    
-        context.putImageData(imageData, 0, 0);
-    
-        return grayScales;
-    };
     const getGrayScales = (array) => {
     
         const grayScales = [];
@@ -100,6 +84,8 @@ const Main = () => {
             setFrames(data[i])
             i++
         }, 100)
+
+        return null
     }
 
 
@@ -112,32 +98,27 @@ const Main = () => {
             let asciiGIF = 0
             const canvas = canvasRef.current
             const context = canvas.getContext('2d')
-            // context.clearRect(0, 0, canvas.width, canvas.height)
-            // const reader = new FileReader();
             imgRef.current.src = null
             imgRef.current.src = URL.createObjectURL(file)
 
             gifFrames({ url: imgRef.current.src, frames: '0-99', outputType: 'canvas' })
                     .then(function (frameData) {
-                    let gifWidth
-                    let gifFrameData = null
-                    gifFrameData = frameData.map( frame => {
+                    let gifWidth, gifHeight, gifArea
+                    const gifFrameData = frameData.map( frame => {
                             const [width, height] = clampDimensions(frame.getImage().width, frame.getImage().height);
                             context.drawImage(frame.getImage(), 0, 0, width, height);
                             const gifData = Array.from(context.getImageData(0, 0, width, height).data)
-                            // context.clearRect(0, 0, canvas.width, canvas.height)
                             gifWidth = width
-                            // frameRef.current.appendChild(frame.getImage())
-                            // console.log(gifData)
+                            gifHeight = height
+                            gifArea = width * height
                         return gifData
                         }  );
-                        // const gray = getGrayScales(gifFrameData) 
                         asciiGIF = gifFrameData.map( (data) => {
                                 // console.log(data)
                                 const gray = getGrayScales(data) 
-                                return gray.map((grayScale, index) => {
+                                return gray.map((grayScale, idx) => {
                                     let nextChars = getCharacterForGrayScale(grayScale);
-                                    return ((index + 1) % gifWidth === 0) ? nextChars + '\n' : nextChars;
+                                    return ((idx + 1) % gifWidth === 0) ? nextChars + '\n' : nextChars;
                                 }).join('')
                                 // }, '')
 
@@ -147,6 +128,8 @@ const Main = () => {
                             // console.log(asciiGIF)
                     }).catch(console.error.bind(console));
            
+
+                    return null
 
             
 
