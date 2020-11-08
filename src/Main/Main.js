@@ -89,112 +89,50 @@ const Main = () => {
         return [rectifiedWidth, height];
     };
 
-    const drawAscii = (grayScales, width) => {
-        const ascii = grayScales.reduce((asciiImage, grayScale, index) => {
-            let nextChars = getCharacterForGrayScale(grayScale);
-            if ((index + 1) % width === 0) {
-                nextChars += '\n';
-            }
-    
-            return asciiImage + nextChars;
-        }, '');
-    
-        preRef.current.textContent = ascii;
-    };
+
+    const animateASCII = (asciiGIF) => {
+        let data = null
+        data = asciiGIF
+        let i = 0
+        console.log(data.length)
+        setInterval(() => {
+            if(i === data.length-1) i = 0
+            setFrames(data[i])
+            i++
+        }, 100)
+    }
 
 
 
 
-    const handleChange = async e => {
+    const handleChange = e => {
        
             const file = e.target.files[0];
             
-
+            let asciiGIF = 0
             const canvas = canvasRef.current
             const context = canvas.getContext('2d')
-            const reader = new FileReader();
-            reader.onload = (event) => {
-                const image = new Image();
-                image.onload = () => {
-                    const [width, height] = clampDimensions(image.width, image.height);
-                    imgRef.current.width = image.width
-                    imgRef.current.height = image.height
-                    canvas.width = width;
-                    canvas.height = height;
-        
-                    context.drawImage(image, 0, 0, width, height);
-                    const grayScales = convertToGrayScales(context, width, height);
-                    // console.log(grayScales.length)
-                    drawAscii(grayScales, width);
-                }
-        
-                image.src = event.target.result;
+            // context.clearRect(0, 0, canvas.width, canvas.height)
+            // const reader = new FileReader();
+            imgRef.current.src = null
+            imgRef.current.src = URL.createObjectURL(file)
 
-               
-
- 
-            };
-            imgRef.current.src = (URL.createObjectURL(file))
-            reader.readAsDataURL(file);
-            // console.log(imgRef.current.src)
-
-            // const results = await extractFrames({
-            //     input: URL.createObjectURL(file),
-            //     // output: 'frame-%d.png'
-            //   })
-            
-            // const arr = Array.from(results.data)
-            // const grayscales = getGrayScales(arr)
-            // const gitDataLength = grayscales.slice().length
-            // const frames = results.shape[2]
-            // console.log(frames, gitDataLength)
-            // const frameData = new Array(frames)
-            // // // console.log(grayscales.length)
-            // // // console.log(dataPerFrame)
-            // const frameDataArray = frameData.fill().map(_ => grayscales.splice(0, gitDataLength/frames))
-            // console.log(frameDataArray)
-            
-            // const frameASCII = frameDataArray.map( (data) => {
-
-            //     return data.map((grayScale, index) => {
-            //         let nextChars = getCharacterForGrayScale(grayScale);
-            //         // console.log(nextChars, index)
-            //         // if ((index + 1) % imgRef.current.width === 0) {
-            //         //     nextChars += '\n';
-            //         // }
-            
-            //         return ((index + 1) % imgRef.current.width === 0) ? nextChars + '\n' : nextChars;
-            //     }).join('')
-                // }, '')
-            
-
-            // } )
-            const gifFrameData = []
-            gifFrames({ url: (URL.createObjectURL(file)), frames: '0-99', outputType: 'canvas' })
+            gifFrames({ url: imgRef.current.src, frames: '0-99', outputType: 'canvas' })
                     .then(function (frameData) {
                     let gifWidth
-                    const gifFrameData = frameData.map( frame => {
-                        //    setInterval(() => {
-                            frameRef.current.appendChild(frame.getImage())
-                            const gifData = Array.from(frame.getImage().getContext('2d').getImageData(0, 0, frame.getImage().width, frame.getImage().height).data)
-                            gifWidth = frame.getImage().width
-                            // const frameASCII = gifData.map( (data) => {
-                            //     console.log(data)
-                            //     // return data.map((grayScale, index) => {
-                            //     //     let nextChars = getCharacterForGrayScale(grayScale);
-                            //     //     return ((index + 1) % imgRef.current.width === 0) ? nextChars + '\n' : nextChars;
-                            //     // }).join('')
-                            //     // }, '')
-                            
-                
-                            // } )
-                            // setFrames(frameASCII)
-                            // gifFrameData.push(gifData)
-                        //    }, 10000)
+                    let gifFrameData = null
+                    gifFrameData = frameData.map( frame => {
+                            const [width, height] = clampDimensions(frame.getImage().width, frame.getImage().height);
+                            context.drawImage(frame.getImage(), 0, 0, width, height);
+                            const gifData = Array.from(context.getImageData(0, 0, width, height).data)
+                            // context.clearRect(0, 0, canvas.width, canvas.height)
+                            gifWidth = width
+                            // frameRef.current.appendChild(frame.getImage())
+                            // console.log(gifData)
                         return gifData
                         }  );
                         // const gray = getGrayScales(gifFrameData) 
-                        const asciiGIF = gifFrameData.map( (data) => {
+                        asciiGIF = gifFrameData.map( (data) => {
                                 // console.log(data)
                                 const gray = getGrayScales(data) 
                                 return gray.map((grayScale, index) => {
@@ -202,10 +140,13 @@ const Main = () => {
                                     return ((index + 1) % gifWidth === 0) ? nextChars + '\n' : nextChars;
                                 }).join('')
                                 // }, '')
-                        })
-                        console.log(asciiGIF)
-                        // setFrames(asciiGIF)
+
+                                
+                            })
+                            animateASCII(asciiGIF)
+                            // console.log(asciiGIF)
                     }).catch(console.error.bind(console));
+           
 
             
 
@@ -223,7 +164,7 @@ const Main = () => {
             </div>
             <div id='frames' ref={frameRef} ></div>
             
-            {frames && frames.map( (frame, index) =>  <pre key={index} > {frame} </pre>  )}
+            {frames && <pre > {frames} </pre> }
             
             {/* <button onClick={handleClick} > Click </button> */}
         </div>
