@@ -7,6 +7,7 @@ let animationInterval
 
 const Main = () => {
     const [frames, setFrames] = useState(null)
+    const [load, setLoad] = useState(true)
     const [url, seturl] = useState(defaultgif)
     const toGrayScale = (r, g, b) => 0.21 * r + 0.72 * g + 0.07 * b;
     const grayRamp = '$@B%8&WM#*oahkbdpqwmZO0QLCJUYXzcvunxrjft/|()1{}[]?-_+~<>i!lI;:,"^`\'. ';
@@ -80,10 +81,11 @@ const Main = () => {
 
 
     const fetchGIF = file => {
-        gifFrames({ url: file, frames: '0-199', outputType: 'canvas' })
+        gifFrames({ url: file, frames: '0-999', outputType: 'canvas' })
                     .then(function (frameData) {
                     let gifWidth
                     context.clearRect(0, 0, canvas.width, canvas.height)
+                    
                     const gifFrameData = frameData.map( frame => {
                             const [width, height] = clampDimensions(frame.getImage().width, frame.getImage().height);
                             context.drawImage(frame.getImage(), 0, 0, width, height);
@@ -104,6 +106,8 @@ const Main = () => {
                                 
                             })
                             animateASCII(asciiGIF)
+                            setTimeout(() => setLoad(false), 500)
+                            
 
                     }).catch( console.error.bind(console));
     }
@@ -117,6 +121,7 @@ const Main = () => {
 
     const handleChange = e => {
         seturl(URL.createObjectURL(e.target.files[0]))
+        setLoad(true)
     }
 
   
@@ -128,7 +133,7 @@ const Main = () => {
                 <input type="file"  accept="image/gif" name="image-upload" id="upload" onChange={ handleChange }  />
                 <label htmlFor="upload" type="url"  name="image-url" id="url" className="upload-label" >Upload GIF</label>
             </div>
-            {frames && <pre>{frames}</pre> }
+            {load ? <pre className="loader" >Loading...</pre> : <pre>{frames}</pre> }
         </div>
     )
 }
