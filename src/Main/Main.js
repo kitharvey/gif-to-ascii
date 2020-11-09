@@ -1,12 +1,13 @@
-import React, { useState } from 'react'
+import React, { useEffect, useState } from 'react'
 import "./MainStyle.scss"
+import defaultgif from "../assets/default.gif"
 var gifFrames = require('gif-frames');
 // var fs = require('fs');
-
+let animationInterval
 
 const Main = () => {
     const [frames, setFrames] = useState(null)
-    const [err, setErr] = useState(false)
+    const [url, seturl] = useState(defaultgif)
     const toGrayScale = (r, g, b) => 0.21 * r + 0.72 * g + 0.07 * b;
     const grayRamp = '$@B%8&WM#*oahkbdpqwmZO0QLCJUYXzcvunxrjft/|()1{}[]?-_+~<>i!lI;:,"^`\'. ';
     const rampLength = grayRamp.length;
@@ -14,6 +15,7 @@ const Main = () => {
     const MAXIMUM_HEIGHT = 80;
     const canvas = document.createElement("canvas");
     const context = canvas.getContext('2d')
+    
 
     const getCharacterForGrayScale = grayScale => grayRamp[Math.ceil((rampLength - 1) * grayScale / 255)];
 
@@ -65,19 +67,15 @@ const Main = () => {
     };
 
 
+
+
     const animateASCII = (asciiGIF) => {
-        let data = null
-        data = asciiGIF
         let i = 0
-        // console.log(data)
-        setInterval(() => {
-            if(i === data.length) i = 0
-            setFrames(data[i])
-            // console.log(i)
+        animationInterval = setInterval(() => {
+            if(i === asciiGIF.length) i = 0
+            setFrames(asciiGIF[i])
             i++
         }, 100)
-        // setFrames(asciiGIF) 
-        // setFrames(null)
     }
 
 
@@ -106,47 +104,31 @@ const Main = () => {
                                 
                             })
                             animateASCII(asciiGIF)
-                            setErr(false)
 
-                    }).catch( console.error.bind(console) && setErr(true));
+                    }).catch( console.error.bind(console));
     }
 
-    const handleChangeURL = e => {
-        if(e.keyCode === 13){
-            fetchGIF(e.target.value)
-        }
-    }
+
+    useEffect(() => {
+        clearInterval(animationInterval)
+        fetchGIF(url)
+    }, [url])
 
 
     const handleChange = e => {
-            fetchGIF(URL.createObjectURL(e.target.files[0]))
+        seturl(URL.createObjectURL(e.target.files[0]))
     }
 
   
 
     return (
         <div className="main-wrapper" >
-            
-            {/* <div className="img-wrapper" > */}
-                {/* <img id="output" ref={imgRef}  /> */}
-                {/* <canvas ref={canvasRef} id="gray" /> */}
-                {/* <pre ref={preRef}></pre> */}
-            {/* </div> */}
-            {/* <div id='frames' ref={frameRef} ></div> */}
-            
-            {/* {frames && frames.map( frame => <pre > {frame} </pre> )} */}
-
-            <h2> ASCII GIF Converter </h2>
-            <p></p>
-            {frames ? <pre>{frames}</pre> : 
-                <div className="inputs" >
-                    <input type="file"  accept="image/gif" name="image-upload" id="upload" onChange={ handleChange }  />
-                    <input type="url"  name="image-url" id="url" onKeyDown={handleChangeURL}  />
-                </div>
-            }
-            {err && <p>Please upload GIF file</p>}
-            
-            {/* <button onClick={handleClick} > Click </button> */}
+            <h1> ASCII GIF Converter </h1>
+            <div className="inputs" >
+                <input type="file"  accept="image/gif" name="image-upload" id="upload" onChange={ handleChange }  />
+                <label htmlFor="upload" type="url"  name="image-url" id="url" className="upload-label" >Upload GIF</label>
+            </div>
+            {frames && <pre>{frames}</pre> }
         </div>
     )
 }
